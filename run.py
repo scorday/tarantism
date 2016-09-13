@@ -187,8 +187,8 @@ try:
             published_at=startdt + timedelta(seconds=i)
         )
 
-        with open('./card_data/%s.json' % card.id, 'w') as f:
-            f.write(ujson.dumps(data))
+        # with open('./card_data/%s.json' % card.id, 'w') as f:
+        #     f.write(ujson.dumps(data))
 
         card.save()
 except Exception as e:
