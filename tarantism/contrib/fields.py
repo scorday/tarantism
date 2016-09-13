@@ -1,6 +1,8 @@
 
 import json
 
+import ujson
+
 from tarantism.fields import BaseField
 
 __all__ = ['JsonField', 'ProtobufField']
@@ -14,10 +16,10 @@ class JsonField(BaseField):
         super(JsonField, self).__init__(*args, **kwargs)
 
     def to_db(self, value):
-        return json.dumps(value, **self.dump_kwargs)
+        return ujson.dumps(value, **self.dump_kwargs)
 
     def to_python(self, value):
-        return json.loads(value, **self.load_kwargs)
+        return ujson.loads(value, **self.load_kwargs)
 
 
 class ProtobufField(BaseField):

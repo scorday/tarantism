@@ -11,6 +11,7 @@ __all__ = ['ModelMetaclass']
 class ModelMetaclass(type):
     def __new__(cls, name, bases, attrs):
         super_new = super(ModelMetaclass, cls).__new__
+        BaseField.creation_counter = 1
 
         fields = {}
         for attr_name, attr_value in attrs.iteritems():
@@ -27,7 +28,7 @@ class ModelMetaclass(type):
                                          (v.creation_counter, v.name)
                                          for v in fields.itervalues()))
 
-        attrs['objects'] = QuerySetManager()
+        attrs['_objects'] = QuerySetManager()
 
         attrs['_meta'] = attrs.pop('meta') if 'meta' in attrs else {}
 

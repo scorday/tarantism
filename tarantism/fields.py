@@ -1,7 +1,9 @@
-
 import re
 from datetime import datetime
 from decimal import Decimal
+from uuid import uuid4
+
+import ujson
 
 from tarantism.exceptions import ValidationError
 
@@ -13,7 +15,6 @@ __all__ = [
     'DateTimeField', 'DEFAULT_DATETIME_FORMAT',
     'DecimalField',
 ]
-
 
 INT32_MIN = -2147483648
 
@@ -28,13 +29,14 @@ class BaseField(object):
     name = None
 
     # Used in tarantism.metaclasses.ModelMetaclass to sort fields.
-    creation_counter = 0
+    creation_counter = 1
 
     # Used for field_types in tarantool client filter method.
     tarantool_filter_type = str
+    tarantool_index_type = 'scalar'
 
     def __init__(self,
-                 required=True,
+                 required=False,
                  default=None,
                  primary_key=False,
                  db_index=None,
@@ -43,7 +45,7 @@ class BaseField(object):
         self.required = required
         self.default = default
         self.primary_key = primary_key
-        self.db_index = db_index
+        self.db_index = 0 if primary_key else db_index
         self.verbose_name = verbose_name
         self.help_text = help_text
 
@@ -71,7 +73,13 @@ class BaseField(object):
         return self.to_python(value)
 
     def validate(self, value):
-        pass
+        if self.required and not value:
+            raise ValidationError(
+                '{name} field error: '
+                'value is required.'.format(
+                    name=self.name
+                )
+            )
 
 
 class Num32Field(BaseField):
@@ -80,6 +88,7 @@ class Num32Field(BaseField):
 
     # Used for field_types in tarantool client filter method.
     tarantool_filter_type = int
+    tarantool_index_type = 'integer'
 
     type_factory = int
 
@@ -99,9 +108,13 @@ class Num32Field(BaseField):
         super(Num32Field, self).__init__(**kwargs)
 
     def to_python(self, value):
-        return self.type_factory(value)
+        if value:
+            return self.type_factory(value)
+        return value
 
     def validate(self, value):
+        super(Num32Field, self).validate(value)
+
         try:
             value = self.type_factory(value)
         except ValueError:
@@ -134,8 +147,13 @@ class Num64Field(Num32Field):
     MAX = INT64_MAX
 
     tarantool_filter_type = long
+    tarantool_index_type = 'integer'
 
     type_factory = long
+
+
+IntField = Num32Field
+LongIntField = Num64Field
 
 
 class BytesField(BaseField):
@@ -151,6 +169,8 @@ class BytesField(BaseField):
         super(BytesField, self).__init__(**kwargs)
 
     def validate(self, value):
+        super(BytesField, self).validate(value)
+
         if not isinstance(value, basestring):
             raise ValidationError(
                 '{name} field error: '
@@ -186,18 +206,40 @@ class BytesField(BaseField):
 
 class StringField(BytesField):
     tarantool_filter_type = unicode
+    tarantool_index_type = 'string'
 
     def to_db(self, value):
-        return value.encode('utf8')
+        if value:
+            return value.encode('utf8')
+        return value
 
     def to_python(self, value):
-        return value.decode('utf8')
+        if value:
+            return value.decode('utf8')
+        return value
+
+
+class UUIDField(StringField):
+    @staticmethod
+    def str_uuid():
+        return str(uuid4())
+
+    def __init__(self, **kwargs):
+        kwargs.update(
+            default=UUIDField.str_uuid,
+            max_length=36,
+            min_length=36,
+        )
+
+        super(UUIDField, self).__init__(**kwargs)
 
 
 DEFAULT_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
 
 class DateTimeField(BaseField):
+    tarantool_index_type = 'string'
+
     def __init__(self,
                  datetime_format=DEFAULT_DATETIME_FORMAT,
                  **kwargs):
@@ -206,12 +248,18 @@ class DateTimeField(BaseField):
         super(DateTimeField, self).__init__(**kwargs)
 
     def to_db(self, value):
-        return value.strftime(self.datetime_format)
+        if value:
+            return value.strftime(self.datetime_format)
+        return ''
 
     def to_python(self, value):
-        return datetime.strptime(value, self.datetime_format)
+        if value:
+            return datetime.strptime(value, self.datetime_format)
+        return None
 
     def validate(self, value):
+        super(DateTimeField, self).validate(value)
+
         if not isinstance(value, datetime):
             raise ValidationError(
                 '{name} field error: '
@@ -230,3 +278,97 @@ class DecimalField(BaseField):
 
     def to_python(self, value):
         return Decimal(value)
+
+
+class BooleanField(BaseField):
+    tarantool_filter_type = bool
+    tarantool_index_type = 'scalar'
+
+    def __init__(self, **kwargs):
+        super(BooleanField, self).__init__(**kwargs)
+
+    def to_db(self, value):
+        return value
+
+    def to_python(self, value):
+        return bool(value)
+
+
+class JsonField(BaseField):
+    def to_db(self, value):
+        return ujson.dumps(value)
+
+    def to_python(self, value):
+        return ujson.loads(value)
+
+    def validate(self, value):
+        super(JsonField, self).validate(value)
+
+        if not isinstance(value, (dict, list, tuple)):
+            raise ValidationError(
+                '{name} field error: '
+                'value is not dict/list. Use simple field'.format(
+                    name=self.name
+                )
+            )
+
+
+class DictField(BaseField):
+    def __init__(self, **kwargs):
+        kwargs.setdefault('default', lambda: {})
+        super(DictField, self).__init__(**kwargs)
+
+    def validate(self, value):
+        super(DictField, self).validate(value)
+
+        if not isinstance(value, dict):
+            raise ValidationError(
+                '{name} field error: '
+                'value is not dict.'.format(
+                    name=self.name
+                )
+            )
+
+
+class ListField(BaseField):
+    def __init__(self, field, **kwargs):
+        self.field = field
+        BaseField.creation_counter -= 1
+
+        kwargs.setdefault('default', lambda: [])
+        super(ListField, self).__init__(**kwargs)
+
+    def validate(self, value):
+        super(ListField, self).validate(value)
+
+        if not isinstance(value, (list, tuple)):
+            raise ValidationError(
+                '{name} field error: '
+                'value is not list.'.format(
+                    name=self.name
+                )
+            )
+
+        if self.field:
+            if hasattr(value, 'iteritems') or hasattr(value, 'items'):
+                sequence = value.iteritems()
+            else:
+                sequence = enumerate(value)
+            for k, v in sequence:
+                try:
+                    self.field.validate(v)
+                except Exception as e:
+                    raise ValidationError(
+                        '{name} field error: '
+                        'list item value is not validated'.format(
+                            name=self.name
+                        )
+                    )
+
+
+class ListAsDictField(ListField):
+    def to_db(self, value):
+        return {i: True for i in value}
+
+    def to_python(self, value):
+        return value.keys()

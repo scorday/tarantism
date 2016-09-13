@@ -1,9 +1,9 @@
 
 import sys
 
-from tarantool import Connection
 from tarantool import DatabaseError
 
+from tarantism.core import Connection
 
 __all__ = [
     'DEFAULT_ALIAS', 'DEFAULT_HOST', 'DEFAULT_PORT', 'DEFAULT_SPACE',
@@ -36,7 +36,7 @@ class ConnectionError(Exception):
     pass
 
 
-def register_connection(alias, host=None, port=None, space=None, **kwargs):
+def register_connection(alias, host=None, port=None, **kwargs):
     """Register connection settings for alias.
 
     :param alias:
@@ -50,7 +50,6 @@ def register_connection(alias, host=None, port=None, space=None, **kwargs):
     conn_settings = {
         'host': host or DEFAULT_HOST,
         'port': int(port) or DEFAULT_PORT,
-        'space': space or DEFAULT_SPACE
     }
     conn_settings.update(kwargs)
 
@@ -114,19 +113,16 @@ def get_connection(alias=DEFAULT_ALIAS, reconnect=False):
     return _connections[alias]
 
 
-def get_space(alias=DEFAULT_ALIAS, reconnect=False):
+def get_space(space, alias=DEFAULT_ALIAS, reconnect=False):
     global _spaces
 
     if reconnect:
         disconnect(alias)
 
-    if alias not in _spaces:
-        conn = get_connection(alias)
-        conn_settings = _connection_settings[alias]
+    if space not in _spaces:
+        _spaces[space] = get_connection(alias).space(space)
 
-        _spaces[alias] = conn.space(conn_settings['space'])
-
-    return _spaces[alias]
+    return _spaces[space]
 
 
 def connect(alias=DEFAULT_ALIAS, **kwargs):

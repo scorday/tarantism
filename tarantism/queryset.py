@@ -18,6 +18,9 @@ class QuerySet(object):
         self._model_class = model_class
         self._space = space
 
+    def __call__(self, **kwargs):
+        return self.filter(**kwargs)
+
     @property
     def model_class(self):
         return self._model_class
@@ -25,6 +28,29 @@ class QuerySet(object):
     @property
     def space(self):
         return self._space
+
+    def to_python(self, response):
+        check_tuple_length = self.model_class._meta.get('check_tuple_length', True)
+
+        model_list = []
+        model_fields_count = len(self.model_class._fields_ordered)
+
+        for number, values in enumerate(response):
+            if check_tuple_length and len(values) != model_fields_count:
+                extra_fields = values[model_fields_count:]
+                raise FieldError(
+                    'Tuple #{number} has {fields_count} extra fields: {fields}'.format(
+                        number=number,
+                        fields_count=len(extra_fields),
+                        fields=','.join(extra_fields)
+                    ))
+
+            raw_data = self.model_class._values_to_dict(values)
+            model = self.model_class.from_dict(raw_data)
+            model._exists_in_db = True
+            model_list.append(model)
+
+        return model_list
 
     def filter(self, **kwargs):
         field_name, value = kwargs.items().pop()
@@ -50,28 +76,11 @@ class QuerySet(object):
         field_types = self.model_class._get_tarantool_filter_types()
 
         response = self.space.select(value, index=field.db_index, field_types=field_types)
+        return self.to_python(response)
 
-        check_tuple_length = self.model_class._meta.get('check_tuple_length', True)
-
-        model_list = []
-        model_fields_count = len(self.model_class._fields_ordered)
-
-        for number, values in enumerate(response):
-            if check_tuple_length and len(values) != model_fields_count:
-                extra_fields = values[model_fields_count:]
-                raise FieldError(
-                    'Tuple #{number} has {fields_count} extra fields: {fields}'.format(
-                        number=number,
-                        fields_count=len(extra_fields),
-                        fields=','.join(extra_fields)
-                    ))
-
-            raw_data = self.model_class._values_to_dict(values)
-            model = self.model_class.from_dict(raw_data)
-            model._exists_in_db = True
-            model_list.append(model)
-
-        return model_list
+    def select(self, *args, **kwargs):
+        response = self.space.select(*args, **kwargs)
+        return self.to_python(response)
 
     def get(self, **kwargs):
         model_list = self.filter(**kwargs)

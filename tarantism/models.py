@@ -1,13 +1,10 @@
-
+from tarantism.core import Space
 from tarantism.metaclasses import ModelMetaclass
-from tarantism.connection import get_space
+from tarantism.connection import get_space, get_connection
 from tarantism.connection import DEFAULT_ALIAS
-from tarantism.exceptions import ValidationError
-from tarantism.fields import *
-
+from tarantism.exceptions import ValidationError, SpaceExists, IgnorableError
 
 __all__ = ['Model']
-
 
 OPERATIONS_MAP = {
     'add': '+',
@@ -47,10 +44,71 @@ class Model(object):
         return setattr(self, name, value)
 
     @classmethod
+    def objects(cls, **kwargs):
+        if kwargs:
+            return cls._objects(**kwargs)
+        return cls._objects
+
+    @classmethod
+    def create_space(cls):
+        space_name = cls._meta['space']
+        space_args = cls._meta.get('space_args', tuple())
+        try:
+            get_connection().call('box.schema.space.create', space_name, *space_args)
+        except IgnorableError:
+            pass
+
+    @classmethod
     def get_space(cls):
+        '''
+        :rtype: Space
+        '''
         return get_space(
-            cls._meta.get('db_alias', DEFAULT_ALIAS)
+            space=cls._meta['space'],
+            alias=cls._meta.get('db_alias', DEFAULT_ALIAS)
         )
+
+    @classmethod
+    def space(cls):
+        return cls.get_space()
+
+    @classmethod
+    def indexes(cls):
+        index_map = cls.space().connection.call('indexes', cls._meta['space'])[0][0]
+        index_map = {k: v for k, v in index_map.items() if isinstance(k, int)}
+        for v in index_map.itervalues():
+            v['fields'] = []
+            for p in v.get('parts', []):
+                p['field_name'] = cls.field_name(p['fieldno'])
+                v['fields'].append(p['field_name'])
+
+        return index_map
+
+    @classmethod
+    def create_index(cls, index_name=None, index_type=None, fields=None, **kwargs):
+        s = cls.get_space()
+
+        assert index_name or fields
+
+        index_type = index_type or 'tree'
+        index_name = index_name or '_'.join(fields)
+
+        parts = []
+        for field_name in (fields or []):
+            f = cls._fields.get(field_name)
+            parts.extend([f.creation_counter, f.tarantool_index_type])
+
+        index_params = dict(
+            type=index_type,
+            parts=parts,
+            **kwargs
+        )
+
+        return s.create_index(index_name, index_params)
+
+    @classmethod
+    def field_name(cls, field_no):
+        return cls._fields_ordered[field_no-1]
 
     @classmethod
     def from_dict(cls, raw_data):
@@ -127,7 +185,7 @@ class Model(object):
     def delete(self):
         primary_key_value = self._get_primary_key_value()
 
-        response = get_space().delete(primary_key_value)
+        response = self.get_space().delete(primary_key_value)
 
         self._exists_in_db = False
 
@@ -142,9 +200,9 @@ class Model(object):
     @classmethod
     def _dict_to_values(cls, data):
         return tuple([
-            data[field_name] for field_name in cls._fields_ordered
-            if field_name in data
-        ])
+                         data[field_name] for field_name in cls._fields_ordered
+                         if field_name in data
+                         ])
 
     @classmethod
     def _get_tarantool_filter_types(cls):
@@ -203,6 +261,6 @@ class Model(object):
                 if isinstance(value, unicode):
                     value = str(value)
 
-                changes.append((field_number, operation, value))
+                changes.append((operation, field_number, value))
 
         return changes
