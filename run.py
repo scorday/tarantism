@@ -229,3 +229,7 @@ print 'total time:', time() - t0
 
 # total: - [1347265]
 # total time: 788.11080718
+
+
+# total: - [530880]
+# total time: 562.815409899
