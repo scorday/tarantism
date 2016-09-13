@@ -112,7 +112,7 @@ conn = connect(
 )
 
 Card.create_space()
-CardData.create_space()
+# CardData.create_space()
 
 try:
     indexes = [
@@ -121,12 +121,12 @@ try:
         ['project_id', 'is_junked', 'is_published', 'published_at'],
     ]
 
-    CardData.create_index(
-        index_name='id',
-        index_type='tree',
-        fields=['id'],
-        unique=True
-    )
+    # CardData.create_index(
+    #     index_name='id',
+    #     index_type='tree',
+    #     fields=['id'],
+    #     unique=True
+    # )
 
     Card.create_index(
         index_name='id',
@@ -187,13 +187,10 @@ try:
             published_at=startdt + timedelta(seconds=i)
         )
 
-        card_data = CardData(
-            id=card.id,
-            data=data
-        )
+        with open('./card_data/%s.json' % card.id, 'w') as f:
+            f.write(ujson.dumps(data))
 
         card.save()
-        card_data.save()
 except Exception as e:
     print e
 
