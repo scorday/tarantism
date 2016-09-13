@@ -159,7 +159,7 @@ except IndexExists:
 
 
 t0 = time()
-total = 5*10**6
+total = 20*10**6
 startdt = datetime.utcnow() - timedelta(seconds=total)
 
 try:
