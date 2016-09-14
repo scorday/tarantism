@@ -13,7 +13,7 @@ from tarantool import DatabaseError
 from tarantool.const import *
 from tqdm import tqdm
 
-from tarantism import models, connect, fields
+from tarantism import models, connect, fields, disconnect
 from tarantism.exceptions import IndexExists
 
 names = '''
@@ -160,6 +160,9 @@ except IndexExists:
     pass
 
 
+disconnect()
+
+
 stats = {}
 
 
@@ -171,6 +174,15 @@ def runner(id_thread):
     t0 = time()
     total = 20 * 10 ** 6
     startdt = datetime.utcnow() - timedelta(seconds=total)
+
+    sleep_done = False
+
+    connect(
+        host='localhost',
+        port=3301,
+        user='avl',
+        password='avl',
+    )
 
     try:
         for i in tqdm(xrange(1, total), total=total):
@@ -209,8 +221,12 @@ def runner(id_thread):
                 logging.info('Thread %s: speed: %s' % (id_thread, i / float(time()-t0)))
                 stats[id_thread] = (i, time()-t0)
                 if i / float(time()-t0) < 100:
-                    logging.info('Thread %s: sleep.' % id_thread)
-                    sleep(30)
+                    if not sleep_done:
+                        logging.info('Thread %s: sleep.' % id_thread)
+                        sleep(30)
+                        sleep_done = True
+                    else:
+                        sleep_done = False
     except Exception as e:
         print e
 
