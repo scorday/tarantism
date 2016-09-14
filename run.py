@@ -10,6 +10,8 @@ import ujson
 from datetime import datetime, timedelta
 
 import multiprocessing
+
+import click
 from tarantool import DatabaseError
 from tarantool.const import *
 from tqdm import tqdm
@@ -240,11 +242,13 @@ def runner(id_thread):
     print 'Thread %s: stop.' % id_thread
 
 
-if __name__ == '__main__':
+@click.command
+@click.option('--th', default=2)
+def main(th):
     t0 = time()
 
     jobs = []
-    for i in range(20):
+    for i in range(th):
         p = multiprocessing.Process(target=runner, args=(i,))
         jobs.append(p)
         p.start()
@@ -259,6 +263,8 @@ if __name__ == '__main__':
     print 'total:', Card.get_space().count()
     print 'total time:', time() - t0
 
+if __name__ == '__main__':
+    main()
 
 
 
