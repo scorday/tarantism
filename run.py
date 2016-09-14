@@ -181,7 +181,7 @@ def runner(id_thread):
     total = 20 * 10 ** 6
     startdt = datetime.utcnow() - timedelta(seconds=total)
 
-    sleep_done = False
+    _runs = 3
     speed_list = [0]
 
     def _working_time():
@@ -237,9 +237,15 @@ def runner(id_thread):
 
                 if speed_list[-1] < env.speed_threshold:
                     print 'Thread %s: sleep.' % id_thread
-                    disconnect()
-                    sleep(env.sleep_seconds)
-                    _connect()
+                    if not _runs:
+                        disconnect()
+                        sleep(env.sleep_seconds)
+                        _connect()
+                        _runs = 3
+                    else:
+                        _runs -= 1
+
+
 
     except Exception as e:
         print e
