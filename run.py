@@ -251,12 +251,12 @@ def runner(id_thread):
 
 @click.command()
 @click.option('--th', default=2)
-@click.option('--ts', default=60*3)
+@click.option('--ss', default=60*3)
 @click.option('--st', default=500)
 def main(th, ss, st):
     env.sleep_seconds = ss
     env.speed_threshold = st
-    
+
     t0 = time()
 
     jobs = []
