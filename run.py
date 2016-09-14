@@ -185,7 +185,7 @@ def runner(id_thread):
     )
 
     try:
-        for i in tqdm(xrange(1, total), total=total):
+        for i in xrange(1, total):
             url = '/'.join(sample(names, 3))
             data = dict(
                 title=' '.join(sample(names, 5)),
