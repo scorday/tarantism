@@ -238,7 +238,7 @@ if __name__ == '__main__':
     t0 = time()
 
     jobs = []
-    for i in range(5):
+    for i in range(20):
         p = multiprocessing.Process(target=runner, args=(i,))
         jobs.append(p)
         p.start()
