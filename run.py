@@ -166,6 +166,13 @@ disconnect()
 
 stats = {}
 
+class Env(object):
+    sleep_seconds = 60*3
+    speed_threshold = 500
+
+
+env = Env()
+
 
 def runner(id_thread):
     print 'Thread %s: start.' % id_thread
@@ -228,10 +235,10 @@ def runner(id_thread):
                 speed_list.append(i / int(_working_time()))
                 print 'Thread %s: speed: %s' % (id_thread, list(reversed(speed_list))[0:3])
 
-                if speed_list[-1] < 100:
+                if speed_list[-1] < env.speed_threshold:
                     print 'Thread %s: sleep.' % id_thread
                     disconnect()
-                    sleep(300)
+                    sleep(env.sleep_seconds)
                     _connect()
 
     except Exception as e:
@@ -244,7 +251,12 @@ def runner(id_thread):
 
 @click.command()
 @click.option('--th', default=2)
-def main(th):
+@click.option('--ts', default=60*3)
+@click.option('--st', default=500)
+def main(th, ss, st):
+    env.sleep_seconds = ss
+    env.speed_threshold = st
+    
     t0 = time()
 
     jobs = []
