@@ -186,6 +186,8 @@ def runner(id_thread):
             password='avl',
         )
 
+    _connect()
+
     try:
         for i in xrange(1, total):
 
