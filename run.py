@@ -206,6 +206,7 @@ def runner(id_thread):
             card_data.save()
 
             if i % 1000 == 0:
+                logging.info('Thread %s: speed: %s' % (id_thread, i / float(time()-t0)))
                 stats[id_thread] = (i, time()-t0)
                 if i / float(time()-t0) < 100:
                     logging.info('Thread %s: sleep.' % id_thread)
