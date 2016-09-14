@@ -226,7 +226,7 @@ def runner(id_thread):
 
             if i % 10000 == 0:
                 speed_list.append(i / int(_working_time()))
-                print 'Thread %s: speed: %s' % (id_thread, sorted(speed_list, reverse=True)[0:3])
+                print 'Thread %s: speed: %s' % (id_thread, list(reversed(speed_list))[0:3])
 
                 if speed_list[-1] < 100:
                     print 'Thread %s: sleep.' % id_thread
