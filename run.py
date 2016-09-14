@@ -242,7 +242,7 @@ def runner(id_thread):
     print 'Thread %s: stop.' % id_thread
 
 
-@click.command
+@click.command()
 @click.option('--th', default=2)
 def main(th):
     t0 = time()
