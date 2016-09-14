@@ -173,16 +173,10 @@ def runner(id_thread):
     startdt = datetime.utcnow() - timedelta(seconds=total)
 
     sleep_done = False
-    sleep_time = 0
-
-    def _sleep(seconds):
-        global sleep_time, sleep_done
-        sleep(seconds)
-        sleep_time += seconds
-        sleep_done = True
+    speed_list = [0]
 
     def _working_time():
-        return time() - t0 - sleep_time
+        return time() - t0
 
     try:
         for i in xrange(1, total):
@@ -225,14 +219,14 @@ def runner(id_thread):
             card_data.save()
 
             if i % 10000 == 0:
-                print 'Thread %s: speed: %s' % (id_thread, i / float(_working_time()))
-                if i / float(_working_time()) < 100:
-                    if not sleep_done:
-                        print 'Thread %s: sleep.' % id_thread
-                        disconnect()
-                        _sleep(120)
-                    else:
-                        sleep_done = False
+                speed_list.append(i / float(_working_time()))
+                print 'Thread %s: speed: %s' % (id_thread, speed_list[-1])
+
+                if speed_list[-1] < speed_list[-2]:
+                    print 'Thread %s: sleep.' % id_thread
+                    disconnect()
+                    sleep(10)
+
     except Exception as e:
         print e
 
