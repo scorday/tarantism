@@ -178,14 +178,16 @@ def runner(id_thread):
     def _working_time():
         return time() - t0
 
+    def _connect():
+        connect(
+            host='localhost',
+            port=3301,
+            user='avl',
+            password='avl',
+        )
+
     try:
         for i in xrange(1, total):
-            connect(
-                host='localhost',
-                port=3301,
-                user='avl',
-                password='avl',
-            )
 
             url = '/'.join(sample(names, 3))
             data = dict(
@@ -220,12 +222,13 @@ def runner(id_thread):
 
             if i % 10000 == 0:
                 speed_list.append(i / float(_working_time()))
-                print 'Thread %s: speed: %s' % (id_thread, speed_list[-1])
+                print 'Thread %s: speed: %s' % (id_thread, sorted(speed_list, reverse=True)[0:3])
 
-                if speed_list[-1] < speed_list[-2]:
+                if speed_list[-1] < 100:
                     print 'Thread %s: sleep.' % id_thread
                     disconnect()
-                    sleep(10)
+                    sleep(300)
+                    _connect()
 
     except Exception as e:
         print e
