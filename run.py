@@ -223,7 +223,7 @@ def runner(id_thread):
             card_data.save()
 
             if i % 10000 == 0:
-                speed_list.append(i / float(_working_time()))
+                speed_list.append(i / _working_time())
                 print 'Thread %s: speed: %s' % (id_thread, sorted(speed_list, reverse=True)[0:3])
 
                 if speed_list[-1] < 100:
