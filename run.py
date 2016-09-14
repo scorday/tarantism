@@ -236,8 +236,8 @@ def runner(id_thread):
                 print 'Thread %s: speed: %s' % (id_thread, list(reversed(speed_list))[0:3])
 
                 if speed_list[-1] < env.speed_threshold:
-                    print 'Thread %s: sleep.' % id_thread
                     if not _runs:
+                        print 'Thread %s: sleep.' % id_thread
                         disconnect()
                         sleep(env.sleep_seconds)
                         _connect()
