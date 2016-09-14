@@ -216,7 +216,7 @@ def runner(id_thread):
             card.save()
             card_data.save()
 
-            if i % 1000 == 0:
+            if i % 10000 == 0:
                 print 'Thread %s: speed: %s' % (id_thread, i / float(time()-t0))
                 if i / float(time()-t0) < 100:
                     if not sleep_done:
