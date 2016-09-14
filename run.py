@@ -160,9 +160,7 @@ try:
 except IndexExists:
     pass
 
-
 disconnect()
-
 
 stats = {}
 
@@ -175,6 +173,16 @@ def runner(id_thread):
     startdt = datetime.utcnow() - timedelta(seconds=total)
 
     sleep_done = False
+    sleep_time = 0
+
+    def _sleep(seconds):
+        global sleep_time, sleep_done
+        sleep(seconds)
+        sleep_time += seconds
+        sleep_done = True
+
+    def _working_time():
+        return time() - t0 - sleep_time
 
     try:
         for i in xrange(1, total):
@@ -217,13 +225,12 @@ def runner(id_thread):
             card_data.save()
 
             if i % 10000 == 0:
-                print 'Thread %s: speed: %s' % (id_thread, i / float(time()-t0))
-                if i / float(time()-t0) < 100:
+                print 'Thread %s: speed: %s' % (id_thread, i / float(_working_time()))
+                if i / float(_working_time()) < 100:
                     if not sleep_done:
                         print 'Thread %s: sleep.' % id_thread
                         disconnect()
-                        sleep(60)
-                        sleep_done = True
+                        _sleep(120)
                     else:
                         sleep_done = False
     except Exception as e:
@@ -259,48 +266,48 @@ if __name__ == '__main__':
 
 
 
-# t0 = time()
-# total = 20*10**6
-# startdt = datetime.utcnow() - timedelta(seconds=total)
-#
-# try:
-#     for i in tqdm(xrange(0, total), total=total):
-#         url = '/'.join(sample(names, 3))
-#         data = dict(
-#             title=' '.join(sample(names, 5)),
-#             description=' '.join(sample(names, 10)),
-#             text=' '.join(sample(names, 30))
-#         )
-#
-#         card = Card(
-#             url=url,
-#             url_hash=get_hexdigest(url),
-#             data_hash=get_hexdigest(ujson.dumps(sorted(data.items()))),
-#             project_id=choice(xrange(0, 10)),
-#             source_id=choice(xrange(0, 1000)),
-#             block_ids=sample(xrange(0, 100), choice(xrange(0, 5))),
-#             rubric_ids=sample(xrange(0, 100), choice(xrange(0, 5))),
-#             is_rubricated=choice([True, False]),
-#             is_junked=choice([True, False]),
-#             is_published=choice([True, False]),
-#             is_duplicate=choice([True, False]),
-#             created_at=startdt + timedelta(seconds=i),
-#             published_at=startdt + timedelta(seconds=i)
-#         )
-#
-#         card_data = CardData(
-#             id=card.id,
-#             data=data
-#         )
-#
-#         card.save()
-#         card_data.save()
-# except Exception as e:
-#     print e
-#
-#
-# print 'total:', Card.get_space().count()
-# print 'total time:', time() - t0
+    # t0 = time()
+    # total = 20*10**6
+    # startdt = datetime.utcnow() - timedelta(seconds=total)
+    #
+    # try:
+    #     for i in tqdm(xrange(0, total), total=total):
+    #         url = '/'.join(sample(names, 3))
+    #         data = dict(
+    #             title=' '.join(sample(names, 5)),
+    #             description=' '.join(sample(names, 10)),
+    #             text=' '.join(sample(names, 30))
+    #         )
+    #
+    #         card = Card(
+    #             url=url,
+    #             url_hash=get_hexdigest(url),
+    #             data_hash=get_hexdigest(ujson.dumps(sorted(data.items()))),
+    #             project_id=choice(xrange(0, 10)),
+    #             source_id=choice(xrange(0, 1000)),
+    #             block_ids=sample(xrange(0, 100), choice(xrange(0, 5))),
+    #             rubric_ids=sample(xrange(0, 100), choice(xrange(0, 5))),
+    #             is_rubricated=choice([True, False]),
+    #             is_junked=choice([True, False]),
+    #             is_published=choice([True, False]),
+    #             is_duplicate=choice([True, False]),
+    #             created_at=startdt + timedelta(seconds=i),
+    #             published_at=startdt + timedelta(seconds=i)
+    #         )
+    #
+    #         card_data = CardData(
+    #             id=card.id,
+    #             data=data
+    #         )
+    #
+    #         card.save()
+    #         card_data.save()
+    # except Exception as e:
+    #     print e
+    #
+    #
+    # print 'total:', Card.get_space().count()
+    # print 'total time:', time() - t0
 
 
     #
@@ -328,9 +335,9 @@ if __name__ == '__main__':
     # total time: 1295.43082905
 
 
-# total: - [1347265]
-# total time: 788.11080718
+    # total: - [1347265]
+    # total time: 788.11080718
 
 
-# total: - [530880]
-# total time: 562.815409899
+    # total: - [530880]
+    # total time: 562.815409899
