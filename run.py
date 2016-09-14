@@ -9,6 +9,7 @@ import ujson
 
 from datetime import datetime, timedelta
 
+import multiprocessing
 from tarantool import DatabaseError
 from tarantool.const import *
 from tqdm import tqdm
@@ -169,8 +170,6 @@ stats = {}
 def runner(id_thread):
     logging.info('Thread %s: start.' % id_thread)
 
-    global stats
-
     t0 = time()
     total = 20 * 10 ** 6
     startdt = datetime.utcnow() - timedelta(seconds=total)
@@ -219,7 +218,6 @@ def runner(id_thread):
 
             if i % 1000 == 0:
                 logging.info('Thread %s: speed: %s' % (id_thread, i / float(time()-t0)))
-                stats[id_thread] = (i, time()-t0)
                 if i / float(time()-t0) < 100:
                     if not sleep_done:
                         logging.info('Thread %s: sleep.' % id_thread)
@@ -230,21 +228,35 @@ def runner(id_thread):
     except Exception as e:
         print e
 
+    disconnect()
+
     logging.info('Thread %s: stop.' % id_thread)
 
 
-t0 = time()
-threads = []
-for i in range(5):
-    th = Thread(target=runner, args=(i,))
-    th.start()
-    threads.append(th)
+if __name__ == '__main__':
+    t0 = time()
 
-for th in threads:
-    th.join()
+    jobs = []
+    for i in range(5):
+        p = multiprocessing.Process(target=runner, args=(i,))
+        jobs.append(p)
+        p.start()
+
+    connect(
+        host='localhost',
+        port=3301,
+        user='avl',
+        password='avl',
+    )
 
     print 'total:', Card.get_space().count()
     print 'total time:', time() - t0
+
+
+
+
+
+
 
 # t0 = time()
 # total = 20*10**6
