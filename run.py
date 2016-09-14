@@ -173,7 +173,7 @@ def runner(id_thread):
     startdt = datetime.utcnow() - timedelta(seconds=total)
 
     try:
-        for i in tqdm(xrange(0, total), total=total):
+        for i in tqdm(xrange(1, total), total=total):
             url = '/'.join(sample(names, 3))
             data = dict(
                 title=' '.join(sample(names, 5)),
