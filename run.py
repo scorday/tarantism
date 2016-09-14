@@ -176,15 +176,15 @@ def runner(id_thread):
 
     sleep_done = False
 
-    connect(
-        host='localhost',
-        port=3301,
-        user='avl',
-        password='avl',
-    )
-
     try:
         for i in xrange(1, total):
+            connect(
+                host='localhost',
+                port=3301,
+                user='avl',
+                password='avl',
+            )
+
             url = '/'.join(sample(names, 3))
             data = dict(
                 title=' '.join(sample(names, 5)),
@@ -221,7 +221,8 @@ def runner(id_thread):
                 if i / float(time()-t0) < 100:
                     if not sleep_done:
                         print 'Thread %s: sleep.' % id_thread
-                        sleep(30)
+                        disconnect()
+                        sleep(60)
                         sleep_done = True
                     else:
                         sleep_done = False
