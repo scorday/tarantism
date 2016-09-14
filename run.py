@@ -168,7 +168,7 @@ stats = {}
 
 
 def runner(id_thread):
-    logging.info('Thread %s: start.' % id_thread)
+    print 'Thread %s: start.' % id_thread
 
     t0 = time()
     total = 20 * 10 ** 6
@@ -217,10 +217,10 @@ def runner(id_thread):
             card_data.save()
 
             if i % 1000 == 0:
-                logging.info('Thread %s: speed: %s' % (id_thread, i / float(time()-t0)))
+                print 'Thread %s: speed: %s' % (id_thread, i / float(time()-t0))
                 if i / float(time()-t0) < 100:
                     if not sleep_done:
-                        logging.info('Thread %s: sleep.' % id_thread)
+                        print 'Thread %s: sleep.' % id_thread
                         sleep(30)
                         sleep_done = True
                     else:
@@ -230,7 +230,7 @@ def runner(id_thread):
 
     disconnect()
 
-    logging.info('Thread %s: stop.' % id_thread)
+    print 'Thread %s: stop.' % id_thread
 
 
 if __name__ == '__main__':
