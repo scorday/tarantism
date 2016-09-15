@@ -257,8 +257,8 @@ def runner(id_thread):
 @click.option('--ss', default=60*3)
 @click.option('--st', default=500)
 def main(th, ss, st):
-    env.sleep_seconds = ss
-    env.speed_threshold = st
+    env.sleep_seconds = int(ss)
+    env.speed_threshold = int(st)
 
     t0 = time()
 
