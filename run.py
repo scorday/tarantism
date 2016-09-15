@@ -175,7 +175,7 @@ env = Env()
 
 
 def runner(id_thread):
-    print 'Thread %s: start.' % id_thread
+    print 'Thread %s: start, ss: %s, st: %s' % (id_thread, env.sleep_seconds, env.speed_threshold)
 
     t0 = time()
     total = 20 * 10 ** 6
