@@ -73,8 +73,12 @@ class Model(object):
         return cls.get_space()
 
     @classmethod
+    def index(cls, index_name):
+        return cls.space().index(index_name)
+
+    @classmethod
     def indexes(cls):
-        index_map = cls.space().connection.call('indexes', cls._meta['space'])[0][0]
+        index_map = cls.space().connection.call('index', cls._meta['space'])[0][0]
         index_map = {k: v for k, v in index_map.items() if isinstance(k, int)}
         for v in index_map.itervalues():
             v['fields'] = []
